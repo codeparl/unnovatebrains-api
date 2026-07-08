@@ -42,14 +42,14 @@ class ChatService
 
     public function history(int $conversationId): array
     {
-        return Message::where('conversation_id', $conversationId)->get();
+        return Message::where('conversation_id', $conversationId)->get()->toArray();
     }
 
     public function conversations(): array
     {
         return Conversation::where('status', 'open')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()->toArray();
     }
 
     public function show(int $conversationId)
