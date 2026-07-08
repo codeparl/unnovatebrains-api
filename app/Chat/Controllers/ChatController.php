@@ -2,198 +2,79 @@
 
 namespace App\Chat\Controllers;
 
-
-use App\Chat\Models\Visitor;
-use App\Chat\Models\Conversation;
-use App\Chat\Models\Message;
-
+use App\Chat\Services\ChatService;
 
 class ChatController
 {
+    private ChatService $chatService;
 
+    public function __construct()
+    {
+        $this->chatService = new ChatService();
+    }
 
     public function start()
     {
-
-        $visitorId = uniqid();
-
-
-        $visitor = Visitor::create([
-            'visitor_id'=>$visitorId
-        ]);
-
-
-        $conversation = Conversation::create([
-            'visitor_id'=>$visitor->id
-        ]);
-
-
-        echo json_encode([
-            "conversation_id"=>$conversation->id,
-            "visitor_id"=>$visitorId
-        ]);
-
+        echo json_encode($this->chatService->start());
     }
-
-
 
     public function send()
     {
-
-        $data=json_decode(
-            file_get_contents("php://input"),
+        $data = json_decode(
+            file_get_contents('php://input'),
             true
         );
 
-
-        $message=Message::create([
-
-            'conversation_id'=>$data['conversation_id'],
-
-            'sender'=>$data['sender'],
-
-            'message'=>$data['message']
-
-        ]);
-
-
-        echo json_encode([
-            "status"=>"sent",
-            "id"=>$message->id
-        ]);
-
+        echo json_encode($this->chatService->send($data));
     }
-
-
 
     public function history($id)
     {
-
-        $messages=Message::where(
-            'conversation_id',
-            $id
-        )->get();
-
-
-        echo json_encode($messages);
-
+        echo json_encode($this->chatService->history((int)$id));
     }
-
 
     public function conversations()
-{
-
-    $conversations = Conversation::where(
-        'status',
-        'open'
-    )
-    ->orderBy(
-        'created_at',
-        'desc'
-    )
-    ->get();
-
-
-    echo json_encode($conversations);
-
-}
-
-
-public function show($id)
-{
-
-    $conversation = Conversation::find($id);
-
-
-    if (!$conversation) {
-
-        http_response_code(404);
-
-        echo json_encode([
-            "message"=>"Conversation not found"
-        ]);
-
-        return;
-
+    {
+        echo json_encode($this->chatService->conversations());
     }
 
+    public function show($id)
+    {
+        $result = $this->chatService->show((int)$id);
 
-    $messages = Message::where(
-        'conversation_id',
-        $id
-    )
-    ->orderBy(
-        'created_at',
-        'asc'
-    )
-    ->get();
-
-
-    echo json_encode([
-        "conversation"=>$conversation,
-        "messages"=>$messages
-    ]);
-
-}
-
-public function reply()
-{
-
-    $data=json_decode(
-        file_get_contents("php://input"),
-        true
-    );
-
-
-    $message = Message::create([
-
-        "conversation_id"=>$data["conversation_id"],
-
-        "sender"=>"agent",
-
-        "message"=>$data["message"]
-
-    ]);
-
-
-    echo json_encode([
-
-        "status"=>"reply sent",
-
-        "id"=>$message->id
-
-    ]);
-
-}
-
-public function close($id)
-{
-
-    $conversation = Conversation::find($id);
-
-
-    if(!$conversation){
-
-        http_response_code(404);
+        if (!empty($result['not_found'])) {
+            http_response_code(404);
+            echo json_encode(['message' => $result['message']]);
+            return;
+        }
 
         echo json_encode([
-            "message"=>"Conversation not found"
+            'conversation' => $result['conversation'],
+            'messages' => $result['messages'],
         ]);
-
-        return;
-
     }
 
+    public function reply()
+    {
+        $data = json_decode(
+            file_get_contents('php://input'),
+            true
+        );
 
-    $conversation->status="closed";
+        echo json_encode($this->chatService->reply($data));
+    }
 
-    $conversation->save();
+    public function close($id)
+    {
+        $result = $this->chatService->close((int)$id);
 
+        if (!empty($result['not_found'])) {
+            http_response_code(404);
+            echo json_encode(['message' => $result['message']]);
+            return;
+        }
 
-    echo json_encode([
-        "status"=>"conversation closed"
-    ]);
-
+        echo json_encode(['status' => $result['status']]);
+    }
 }
 
-}
