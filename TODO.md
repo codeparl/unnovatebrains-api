@@ -1,30 +1,13 @@
-# TODO - Auth system for Unnovate Brains live chat
+# TODO
 
-- [x] Implement authentication DB schema (users, api_tokens)
-  - [x] Append auth tables into `database/schema.sql` (per approved decision)
+- [x] Move app2/Auth/* into Laravel-standard locations under app/ (controllers -> app/Http/Controllers, middleware -> app/Http/Middleware, services -> app/Services, models -> app/Models or app/Auth/Models)
+- [x] Move app2/Chat/* into Laravel-standard locations under app/ (controllers -> app/Http/Controllers, services -> app/Services)
+- [x] Move app2/Database/Database.php into app/Database/Database.php if not already present
+- [x] Update moved PHP namespaces to match their new paths
+- [x] Update routess/api.php imports/usages to the new namespaces
 
+- [x] Ensure code compiles (php -l on moved files)
+- [x] Run composer dump-autoload
+- [x] Run php artisan test (or at least php artisan -q routes check if available)
 
-- [x] Create auth module files under `app/Auth/`
-
-  - [x] `Controllers/AuthController.php`
-  - [x] `Models/User.php`
-  - [x] `Models/ApiToken.php`
-  - [x] `Services/AuthService.php` (prepared PDO statements, password_verify, random_bytes, hash_equals)
-  - [x] `Middleware/AuthMiddleware.php` (Bearer token validation, attach authenticated user)
-
-
-- [x] Protect chat routes + add auth endpoints
-  - [x] Update `routes/api.php` to add:
-    - [x] POST /api/auth/login
-    - [x] POST /api/auth/logout
-    - [x] GET /api/auth/me
-  - [x] Add middleware protection to:
-    - [x] GET /api/chat/conversations
-    - [x] GET /api/chat/conversation/{id}
-    - [x] POST /api/chat/reply
-    - [x] POST /api/chat/close/{id}
-
-
-- [ ] Add curl testing commands
-- [ ] Deployment notes for GitHub Actions / VPS
 

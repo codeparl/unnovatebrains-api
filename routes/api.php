@@ -1,115 +1,94 @@
 <?php
 
-
-require_once __DIR__.'/../app/Database/Database.php';
-
-
-use Bramus\Router\Router;
-use App\Chat\Controllers\ChatController;
-use App\Auth\Controllers\AuthController;
-use App\Auth\Middleware\AuthMiddleware;
-
-$router = new Router();
-
-$chat = new ChatController();
-$auth = new AuthController();
-$authMiddleware = new AuthMiddleware();
-
-$router->post(
-'/api/chat/start',
-[$chat,'start']
-);
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\ChatController;
+use App\Http\Controllers\Api\V1\AuthController;
 
 
+Route::prefix('v1')->group(function () {
 
 
-$router->post(
-'/api/chat/send',
-[$chat,'send']
-);
+    /*
+    |--------------------------------------------------------------------------
+    | API Authentication
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/auth/login', [
+        AuthController::class,
+        'login'
+    ]);
+
+
+    Route::middleware('auth:sanctum')->group(function () {
+
+
+        Route::post('/auth/logout', [
+            AuthController::class,
+            'logout'
+        ]);
+
+
+        Route::get('/auth/me', [
+            AuthController::class,
+            'me'
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Agent Chat Management
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/chat/conversations', [
+            ChatController::class,
+            'conversations'
+        ]);
+
+
+        Route::get('/chat/conversation/{id}', [
+            ChatController::class,
+            'show'
+        ]);
+
+
+        Route::post('/chat/reply', [
+            ChatController::class,
+            'reply'
+        ]);
+
+
+        Route::post('/chat/close/{id}', [
+            ChatController::class,
+            'close'
+        ]);
+
+    });
 
 
 
-$router->get(
-'/api/chat/history/(\d+)',
-[$chat,'history']
-);
+    /*
+    |--------------------------------------------------------------------------
+    | Visitor Live Chat (No Authentication)
+    |--------------------------------------------------------------------------
+    */
 
-$router->get(
-'/api/chat/conversations',
-function() use ($chat, $authMiddleware) {
-    $auth = $authMiddleware->authenticate();
-    if (!$auth['ok']) {
-        http_response_code(401);
-        echo json_encode(['message' => 'Unauthenticated']);
-        return;
-    }
-    $chat->conversations();
-}
-);
+    Route::post('/chat/start', [
+        ChatController::class,
+        'start'
+    ]);
 
 
-$router->get(
-'/api/chat/conversation/(\d+)',
-function($id) use ($chat, $authMiddleware) {
-    $auth = $authMiddleware->authenticate();
-    if (!$auth['ok']) {
-        http_response_code(401);
-        echo json_encode(['message' => 'Unauthenticated']);
-        return;
-    }
-    $chat->show($id);
-}
-);
+    Route::post('/chat/send', [
+        ChatController::class,
+        'send'
+    ]);
 
 
-$router->post(
-'/api/chat/reply',
-function() use ($chat, $authMiddleware) {
-    $auth = $authMiddleware->authenticate();
-    if (!$auth['ok']) {
-        http_response_code(401);
-        echo json_encode(['message' => 'Unauthenticated']);
-        return;
-    }
-    $chat->reply();
-}
-);
+    Route::get('/chat/history/{id}', [
+        ChatController::class,
+        'history'
+    ]);
 
-$router->post(
-'/api/chat/close/(\d+)',
-function($id) use ($chat, $authMiddleware) {
-    $auth = $authMiddleware->authenticate();
-    if (!$auth['ok']) {
-        http_response_code(401);
-        echo json_encode(['message' => 'Unauthenticated']);
-        return;
-    }
-    $chat->close($id);
-}
-);
-
-$router->post(
-'/api/auth/login',
-[$auth,'login']
-);
-
-$router->post(
-'/api/auth/logout',
-[$auth,'logout']
-);
-
-$router->get(
-'/api/auth/me',
-function() use ($auth, $authMiddleware) {
-    $authMiddlewareResult = $authMiddleware->authenticate();
-    if (!$authMiddlewareResult['ok']) {
-        http_response_code(401);
-        echo json_encode(['message' => 'Unauthenticated']);
-        return;
-    }
-    // keep controller signature-free (controller also has me())
-    echo json_encode($authMiddlewareResult['user']);
-}
-);
-
+});
